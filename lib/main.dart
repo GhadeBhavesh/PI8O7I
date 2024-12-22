@@ -31,77 +31,32 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+class WidgetSelectorPage extends StatefulWidget {
+  final List<String> selectedWidgets;
+
+  const WidgetSelectorPage({
+    Key? key,
+    required this.selectedWidgets,
+  }) : super(key: key);
 
   @override
-  _HomePageState createState() => _HomePageState();
+  _WidgetSelectorPageState createState() => _WidgetSelectorPageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  final List<String> _selectedWidgets = [];
-  final TextEditingController _textController = TextEditingController();
-  final TextEditingController _imageUrlController = TextEditingController();
-  bool _isLoading = false;
+class _WidgetSelectorPageState extends State<WidgetSelectorPage> {
+  late List<String> _selectedWidgets;
 
-  void _showWidgetSelector() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildSelectorOption('Text Widget', 'textbox', setState),
-                    const SizedBox(height: 10),
-                    _buildSelectorOption('Image Widget', 'imagebox', setState),
-                    const SizedBox(height: 10),
-                    _buildSelectorOption(
-                        'Button Widget', 'savebutton', setState),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        this.setState(() {}); // Update parent state
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.lightGreenAccent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 30, vertical: 12),
-                      ),
-                      child: const Text(
-                        'Import Widgets',
-                        style: TextStyle(color: Colors.black87),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
+  @override
+  void initState() {
+    super.initState();
+    _selectedWidgets = List.from(widget.selectedWidgets);
   }
 
-  Widget _buildSelectorOption(
-      String title, String value, StateSetter setState) {
+  Widget _buildSelectorOption(String title, String value) {
     bool isSelected = _selectedWidgets.contains(value);
     return Container(
+      width: 300, // Fixed width for consistent sizing
+      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: Colors.grey[200],
         borderRadius: BorderRadius.circular(10),
@@ -118,31 +73,116 @@ class _HomePageState extends State<HomePage> {
         ),
         title: Text(title),
         onTap: () {
-          _updateSelection(value, !isSelected);
-          setState(() {}); // Update dialog state
+          setState(() {
+            if (isSelected) {
+              _selectedWidgets.remove(value);
+            } else {
+              _selectedWidgets.add(value);
+            }
+          });
         },
       ),
     );
   }
 
-  void _updateSelection(String widget, bool selected) {
-    setState(() {
-      if (selected) {
-        if (!_selectedWidgets.contains(widget)) {
-          _selectedWidgets.add(widget);
-        }
-      } else {
-        _selectedWidgets.remove(widget);
-      }
-    });
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        // Wrap with Center widget
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center, // Center vertically
+          children: [
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                margin: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.lightGreenAccent[100],
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(
+                  // Center the Column
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    // Center items vertically
+                    children: [
+                      _buildSelectorOption('Text Widget', 'textbox'),
+                      _buildSelectorOption('Image Widget', 'imagebox'),
+                      _buildSelectorOption('Button Widget', 'savebutton'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              width: 220,
+              height: 50,
+              margin: const EdgeInsets.only(bottom: 80),
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context, _selectedWidgets);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.lightGreenAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    side: const BorderSide(color: Colors.black, width: 1),
+                  ),
+                ),
+                child: const Text(
+                  'Import Widgets',
+                  style: TextStyle(color: Colors.black87),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  const HomePage({Key? key}) : super(key: key);
+
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final List<String> _selectedWidgets = [];
+  final TextEditingController _textController = TextEditingController();
+  final TextEditingController _imageUrlController = TextEditingController();
+  bool _isLoading = false;
+  bool _showWarning = false; // New state variable for warning message
+
+  Future<void> _navigateToWidgetSelector() async {
+    final result = await Navigator.push<List<String>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => WidgetSelectorPage(
+          selectedWidgets: _selectedWidgets,
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedWidgets.clear();
+        _selectedWidgets.addAll(result);
+        _showWarning = false; // Reset warning when widgets change
+      });
+    }
   }
 
   Future<void> _saveData() async {
     if (!_selectedWidgets.contains('textbox') &&
         !_selectedWidgets.contains('imagebox')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add at least a widget to save.')),
-      );
+      setState(() {
+        _showWarning = true; // Show warning instead of snackbar
+      });
       return;
     }
 
@@ -158,6 +198,7 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _textController.clear();
         _imageUrlController.clear();
+        _showWarning = false; // Clear warning on successful save
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -176,12 +217,15 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Assignment App'),
+        centerTitle: true,
+        title: const Text(
+          'Assignment App',
+          style: TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
         elevation: 0,
       ),
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+      backgroundColor: Colors.white,
       body: Column(
         children: [
           Expanded(
@@ -233,7 +277,20 @@ class _HomePageState extends State<HomePage> {
                         child: Text('Upload Image'),
                       ),
                     ),
-                  if (_selectedWidgets.contains('savebutton'))
+                  if (_selectedWidgets.contains('savebutton')) ...[
+                    if (_showWarning) // Show warning message above save button
+                      Container(
+                        padding: const EdgeInsets.all(80),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        child: const Text(
+                          'Add at-least a widget to save',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     Container(
                       width: 100,
                       child: ElevatedButton(
@@ -250,14 +307,17 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
+                  ],
                 ],
               ),
             ),
           ),
           Container(
+            width: 220,
+            height: 50,
             margin: const EdgeInsets.only(bottom: 20),
             child: FloatingActionButton.extended(
-              onPressed: _showWidgetSelector,
+              onPressed: _navigateToWidgetSelector,
               label: const Text(
                 'Add Widgets',
                 style: TextStyle(color: Colors.black87),
@@ -265,6 +325,7 @@ class _HomePageState extends State<HomePage> {
               backgroundColor: Colors.lightGreenAccent,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
+                side: const BorderSide(color: Colors.black, width: 1),
               ),
             ),
           ),
