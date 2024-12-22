@@ -20,6 +20,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Assignment App',
       theme: ThemeData(
         primarySwatch: Colors.green,
@@ -47,52 +48,58 @@ class _HomePageState extends State<HomePage> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildSelectorOption('Text Widget', 'textbox'),
-                const SizedBox(height: 10),
-                _buildSelectorOption('Image Widget', 'imagebox'),
-                const SizedBox(height: 10),
-                _buildSelectorOption('Button Widget', 'savebutton'),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    setState(() {});
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.lightGreenAccent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 12),
-                  ),
-                  child: const Text(
-                    'Import Widgets',
-                    style: TextStyle(color: Colors.black87),
-                  ),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              ],
-            ),
-          ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildSelectorOption('Text Widget', 'textbox', setState),
+                    const SizedBox(height: 10),
+                    _buildSelectorOption('Image Widget', 'imagebox', setState),
+                    const SizedBox(height: 10),
+                    _buildSelectorOption(
+                        'Button Widget', 'savebutton', setState),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        this.setState(() {}); // Update parent state
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.lightGreenAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 30, vertical: 12),
+                      ),
+                      child: const Text(
+                        'Import Widgets',
+                        style: TextStyle(color: Colors.black87),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildSelectorOption(String title, String value) {
+  Widget _buildSelectorOption(
+      String title, String value, StateSetter setState) {
     bool isSelected = _selectedWidgets.contains(value);
     return Container(
       decoration: BoxDecoration(
@@ -110,7 +117,10 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         title: Text(title),
-        onTap: () => _updateSelection(value, !isSelected),
+        onTap: () {
+          _updateSelection(value, !isSelected);
+          setState(() {}); // Update dialog state
+        },
       ),
     );
   }
@@ -131,7 +141,7 @@ class _HomePageState extends State<HomePage> {
     if (!_selectedWidgets.contains('textbox') &&
         !_selectedWidgets.contains('imagebox')) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add at-least a widget to save.')),
+        const SnackBar(content: Text('Add at least a widget to save.')),
       );
       return;
     }
@@ -171,92 +181,94 @@ class _HomePageState extends State<HomePage> {
         foregroundColor: Colors.black,
         elevation: 0,
       ),
-      backgroundColor: Colors.lightGreenAccent[100],
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (_selectedWidgets.isEmpty)
-                      const Text(
-                        'No widget is added',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+      body: Column(
+        children: [
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.lightGreenAccent[100],
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_selectedWidgets.isEmpty)
+                    const Text(
+                      'No widget is added',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  if (_selectedWidgets.contains('textbox'))
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: TextField(
+                        controller: _textController,
+                        decoration: const InputDecoration(
+                          hintText: 'Enter Text',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.all(16),
                         ),
                       ),
-                    if (_selectedWidgets.contains('textbox'))
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TextField(
-                          controller: _textController,
-                          decoration: const InputDecoration(
-                            hintText: 'Enter Text',
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.all(16),
+                    ),
+                  if (_selectedWidgets.contains('imagebox'))
+                    Container(
+                      height: 150,
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Center(
+                        child: Text('Upload Image'),
+                      ),
+                    ),
+                  if (_selectedWidgets.contains('savebutton'))
+                    Container(
+                      width: 100,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _saveData,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.lightGreenAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                      ),
-                    if (_selectedWidgets.contains('imagebox'))
-                      Container(
-                        height: 150,
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Center(
-                          child: Text('Upload Image'),
+                        child: Text(
+                          'Save',
+                          style: TextStyle(color: Colors.black87),
                         ),
                       ),
-                    if (_selectedWidgets.contains('savebutton'))
-                      Container(
-                        width: 100,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _saveData,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.lightGreenAccent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            'Save',
-                            style: TextStyle(color: Colors.black87),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
-            Container(
-              margin: const EdgeInsets.only(bottom: 20),
-              child: FloatingActionButton.extended(
-                onPressed: _showWidgetSelector,
-                label: const Text(
-                  'Add Widgets',
-                  style: TextStyle(color: Colors.black87),
-                ),
-                backgroundColor: Colors.lightGreenAccent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
+          ),
+          Container(
+            margin: const EdgeInsets.only(bottom: 20),
+            child: FloatingActionButton.extended(
+              onPressed: _showWidgetSelector,
+              label: const Text(
+                'Add Widgets',
+                style: TextStyle(color: Colors.black87),
+              ),
+              backgroundColor: Colors.lightGreenAccent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
