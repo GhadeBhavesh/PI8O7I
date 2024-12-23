@@ -1,17 +1,31 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:image_picker/image_picker.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: FirebaseOptions(
-      apiKey: "AIzaSyCU_M32ciniLVsotqGaQxUX6593V1sL2DA",
-      appId: "1:77417343007:android:e85ad5b9e1c35893e60d2a",
-      messagingSenderId: "77417343007",
-      projectId: "care-59e97",
-    ),
-  ).then((value) => runApp(MyApp()));
+  try {
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: "AIzaSyCU_M32ciniLVsotqGaQxUX6593V1sL2DA",
+        appId: "1:77417343007:android:e85ad5b9e1c35893e60d2a",
+        messagingSenderId: "77417343007",
+        projectId: "care-59e97",
+        databaseURL: "https://care-59e97-default-rtdb.firebaseio.com",
+      ),
+    );
+  } catch (e) {
+    // If Firebase is already initialized, continue
+    if (Firebase.apps.isNotEmpty) {
+      Firebase.app();
+    } else {
+      rethrow;
+    }
+  }
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -55,7 +69,7 @@ class _WidgetSelectorPageState extends State<WidgetSelectorPage> {
   Widget _buildSelectorOption(String title, String value) {
     bool isSelected = _selectedWidgets.contains(value);
     return Container(
-      width: 300, // Fixed width for consistent sizing
+      width: 300,
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: Colors.grey[200],
@@ -89,9 +103,8 @@ class _WidgetSelectorPageState extends State<WidgetSelectorPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        // Wrap with Center widget
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, // Center vertically
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Expanded(
               child: Container(
@@ -103,10 +116,8 @@ class _WidgetSelectorPageState extends State<WidgetSelectorPage> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Center(
-                  // Center the Column
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    // Center items vertically
                     children: [
                       _buildSelectorOption('Text Widget', 'textbox'),
                       _buildSelectorOption('Image Widget', 'imagebox'),
@@ -154,9 +165,13 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final List<String> _selectedWidgets = [];
   final TextEditingController _textController = TextEditingController();
-  final TextEditingController _imageUrlController = TextEditingController();
   bool _isLoading = false;
-  bool _showWarning = false; // New state variable for warning message
+  bool _showWarning = false;
+  File? _image;
+  String? _base64Image;
+  final ImagePicker _picker = ImagePicker();
+  final DatabaseReference _database =
+      FirebaseDatabase.instance.ref().child('widgets');
 
   Future<void> _navigateToWidgetSelector() async {
     final result = await Navigator.push<List<String>>(
@@ -172,7 +187,27 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _selectedWidgets.clear();
         _selectedWidgets.addAll(result);
-        _showWarning = false; // Reset warning when widgets change
+        _showWarning = false;
+      });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 85,
+    );
+
+    if (pickedFile != null) {
+      final File imageFile = File(pickedFile.path);
+      final List<int> imageBytes = await imageFile.readAsBytes();
+      final String base64Image = base64Encode(imageBytes);
+
+      setState(() {
+        _image = imageFile;
+        _base64Image = base64Image;
       });
     }
   }
@@ -180,25 +215,32 @@ class _HomePageState extends State<HomePage> {
   Future<void> _saveData() async {
     if (!_selectedWidgets.contains('textbox') &&
         !_selectedWidgets.contains('imagebox')) {
-      setState(() {
-        _showWarning = true; // Show warning instead of snackbar
-      });
+      setState(() => _showWarning = true);
+      return;
+    }
+
+    if (_selectedWidgets.contains('textbox') && _textController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter text')),
+      );
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseFirestore.instance.collection('widgets').add({
-        'text': _textController.text,
-        'imageUrl': _imageUrlController.text,
-        'timestamp': FieldValue.serverTimestamp(),
+      await _database.push().set({
+        'text':
+            _selectedWidgets.contains('textbox') ? _textController.text : null,
+        'image': _selectedWidgets.contains('imagebox') ? _base64Image : null,
+        'timestamp': ServerValue.timestamp,
       });
 
       setState(() {
+        _showWarning = false;
+        _image = null;
+        _base64Image = null;
         _textController.clear();
-        _imageUrlController.clear();
-        _showWarning = false; // Clear warning on successful save
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -265,20 +307,29 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   if (_selectedWidgets.contains('imagebox'))
-                    Container(
-                      height: 150,
-                      width: double.infinity,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Center(
-                        child: Text('Upload Image'),
+                    GestureDetector(
+                      onTap: _pickImage,
+                      child: Container(
+                        height: 150,
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(8),
+                          image: _image != null
+                              ? DecorationImage(
+                                  image: FileImage(_image!),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
+                        ),
+                        child: _image == null
+                            ? const Center(child: Text('Tap to pick image'))
+                            : null,
                       ),
                     ),
                   if (_selectedWidgets.contains('savebutton')) ...[
-                    if (_showWarning) // Show warning message above save button
+                    if (_showWarning)
                       Container(
                         padding: const EdgeInsets.all(80),
                         margin: const EdgeInsets.only(bottom: 16),
@@ -337,7 +388,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _textController.dispose();
-    _imageUrlController.dispose();
     super.dispose();
   }
 }
