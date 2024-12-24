@@ -18,7 +18,6 @@ Future<void> main() async {
       ),
     );
   } catch (e) {
-    // If Firebase is already initialized, continue
     if (Firebase.apps.isNotEmpty) {
       Firebase.app();
     } else {
@@ -36,10 +35,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Assignment App',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        scaffoldBackgroundColor: Colors.lightGreenAccent[100],
-      ),
       home: const HomePage(),
     );
   }
@@ -70,22 +65,53 @@ class _WidgetSelectorPageState extends State<WidgetSelectorPage> {
     bool isSelected = _selectedWidgets.contains(value);
     return Container(
       width: 300,
-      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.grey.shade300, // White background around the dot
       ),
       child: ListTile(
-        leading: Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isSelected ? Colors.lightGreenAccent : Colors.white,
-            border: Border.all(color: Colors.grey),
+        leading: GestureDetector(
+          onTap: () {
+            setState(() {
+              if (isSelected) {
+                _selectedWidgets.remove(value);
+              } else {
+                _selectedWidgets.add(value);
+              }
+            });
+          },
+          child: Container(
+            color: Colors.white,
+            child: Padding(
+              padding: EdgeInsets.all(8),
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isSelected
+                      ? Color.fromARGB(255, 84, 236, 84)
+                      : Colors.grey.shade300,
+                  border: Border.all(
+                    color: Colors.grey.shade300,
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
-        title: Text(title),
+        title: Text(
+          title,
+          style: TextStyle(
+              color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+        ),
         onTap: () {
           setState(() {
             if (isSelected) {
@@ -102,6 +128,8 @@ class _WidgetSelectorPageState extends State<WidgetSelectorPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor:
+          Color.fromARGB(255, 240, 252, 236), // Green background for page
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -112,7 +140,7 @@ class _WidgetSelectorPageState extends State<WidgetSelectorPage> {
                 margin: const EdgeInsets.all(16.0),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.lightGreenAccent[100],
+                  color: Color.fromARGB(255, 240, 252, 236),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Center(
@@ -120,31 +148,42 @@ class _WidgetSelectorPageState extends State<WidgetSelectorPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildSelectorOption('Text Widget', 'textbox'),
+                      const SizedBox(height: 80),
                       _buildSelectorOption('Image Widget', 'imagebox'),
+                      const SizedBox(height: 80),
                       _buildSelectorOption('Button Widget', 'savebutton'),
                     ],
                   ),
                 ),
               ),
             ),
-            Container(
-              width: 220,
-              height: 50,
-              margin: const EdgeInsets.only(bottom: 80),
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context, _selectedWidgets);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.lightGreenAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    side: const BorderSide(color: Colors.black, width: 1),
+            Padding(
+              padding: const EdgeInsets.all(18.0),
+              child: Container(
+                width: 220,
+                height: 50,
+                margin: const EdgeInsets.only(bottom: 80),
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context, _selectedWidgets);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 176, 252, 172),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      side: BorderSide(
+                        color: Colors.black,
+                        width: 1,
+                      ),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'Import Widgets',
-                  style: TextStyle(color: Colors.black87),
+                  child: Text(
+                    'Import Widgets',
+                    style: TextStyle(
+                      color: Colors.grey[800],
+                      fontSize: 18,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -244,7 +283,20 @@ class _HomePageState extends State<HomePage> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data saved successfully!')),
+        SnackBar(
+          content: Center(
+            child: Text(
+              'Successfully Saved',
+              style: TextStyle(
+                color: Color.fromARGB(255, 176, 252, 172),
+                fontSize: 14,
+              ),
+            ),
+          ),
+          backgroundColor: Colors.green.shade50,
+          duration: Duration(seconds: 2),
+          elevation: 0, // Removes shadow to match the image
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -276,7 +328,7 @@ class _HomePageState extends State<HomePage> {
               margin: const EdgeInsets.all(16.0),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.lightGreenAccent[100],
+                color: Color.fromARGB(255, 240, 252, 236),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -286,7 +338,7 @@ class _HomePageState extends State<HomePage> {
                     const Text(
                       'No widget is added',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 28,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -301,16 +353,23 @@ class _HomePageState extends State<HomePage> {
                         controller: _textController,
                         decoration: const InputDecoration(
                           hintText: 'Enter Text',
+                          hintStyle: TextStyle(
+                              color: Colors.black,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold),
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.all(16),
                         ),
                       ),
                     ),
+                  SizedBox(
+                    height: 40,
+                  ),
                   if (_selectedWidgets.contains('imagebox'))
                     GestureDetector(
                       onTap: _pickImage,
                       child: Container(
-                        height: 150,
+                        height: 250,
                         width: double.infinity,
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
@@ -324,7 +383,14 @@ class _HomePageState extends State<HomePage> {
                               : null,
                         ),
                         child: _image == null
-                            ? const Center(child: Text('Tap to pick image'))
+                            ? const Center(
+                                child: Text(
+                                'Upload Image',
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold),
+                              ))
                             : null,
                       ),
                     ),
@@ -342,19 +408,25 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                       ),
-                    Container(
-                      width: 100,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _saveData,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.lightGreenAccent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                    Padding(
+                      padding: const EdgeInsets.all(28.0),
+                      child: Container(
+                        width: 90,
+                        height: 45,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _saveData,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color.fromARGB(255, 176, 252, 172),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(1),
+                                side:
+                                    BorderSide(color: Colors.black, width: 1)),
                           ),
-                        ),
-                        child: Text(
-                          'Save',
-                          style: TextStyle(color: Colors.black87),
+                          child: Text(
+                            'Save',
+                            style:
+                                TextStyle(color: Colors.black87, fontSize: 18),
+                          ),
                         ),
                       ),
                     ),
@@ -363,20 +435,23 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          Container(
-            width: 220,
-            height: 50,
-            margin: const EdgeInsets.only(bottom: 20),
-            child: FloatingActionButton.extended(
-              onPressed: _navigateToWidgetSelector,
-              label: const Text(
-                'Add Widgets',
-                style: TextStyle(color: Colors.black87),
-              ),
-              backgroundColor: Colors.lightGreenAccent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-                side: const BorderSide(color: Colors.black, width: 1),
+          Padding(
+            padding: const EdgeInsets.all(18.0),
+            child: Container(
+              width: 220,
+              height: 50,
+              margin: const EdgeInsets.only(bottom: 20),
+              child: FloatingActionButton.extended(
+                onPressed: _navigateToWidgetSelector,
+                label: const Text(
+                  'Add Widgets',
+                  style: TextStyle(color: Colors.black87),
+                ),
+                backgroundColor: Color.fromARGB(255, 176, 252, 172),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  side: const BorderSide(color: Colors.black, width: 1),
+                ),
               ),
             ),
           ),
